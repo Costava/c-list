@@ -30,12 +30,11 @@ int main(void) {
 }
 ```
 
-Alternatively, use macros `VEC_GENERATE_HEADER_CODE` and `VEC_GENERATE_IMPLEMENTATION_CODE`
-in separate header and `.c` files respectively.  
-`VEC_GENERATE_FOR_TYPE` calls both of the other two for convenience.  
-All three macros take the same two arguments: `type` and `suffix`.  
-See `test/main.c` for an example of the convenience macro.  
-See `test/car.c` and `test/car.h` for an example of the separate macros.
+`VEC_GENERATE_FOR_TYPE` is a convenience macro that calls both
+`VEC_GENERATE_HEADER_CODE` and `VEC_GENERATE_IMPLEMENTATION_CODE`.  
+Alternatively, these two macros can be called separately
+as seen in `test/car.h` and `test/car.c` respectively.  
+All three macros take the same two arguments: `type` and `suffix`.
 
 See `VEC_FOR_ALL_FUNCS` in `vec.h` for a list of all functions.
 Descriptions are above the definitions in `vec.h`.
