@@ -2,8 +2,6 @@
 #include <stdio.h>
 
 #include "car.h"
-
-#define VEC_IMPLEMENTATION
 #include "vec.h"
 
 VEC_GENERATE_FOR_TYPE(int, int)

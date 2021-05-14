@@ -10,9 +10,6 @@ Dependencies:
 
 ```C
 #include <stdint.h>
-
-// Only include this `#define` in the one file with the main function
-#define VEC_IMPLEMENTATION
 #include "vec.h"
 
 // Generate code for the type `int32_t`

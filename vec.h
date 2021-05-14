@@ -3,12 +3,6 @@ File: vec.h
 Author: Costava
 License: BSD 2-Clause License (see end of file)
 
-This file is a single-header library.
-In the file with your main function, you will need these two lines:
-    #define VEC_IMPLEMENTATION
-    #include "vec.h"
-In other files, just include this header file like normal.
-
 A vec is a struct to manage the state of a dynamic array.
 The array buffer is heap-allocated and self-resizing (grows when necessary).
 For a given vec, all elements have the same type.
@@ -48,19 +42,6 @@ There are two ways to generate vec code for a given type:
 #if defined(__linux__)
 // For `size_t`
 #include <stddef.h>
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-// Some utility functions.
-// They call calloc or realloc accordingly and exit(1) if error.
-void *vec_calloc(size_t num, size_t size);
-void *vec_realloc(void *ptr, size_t new_size);
-
-#ifdef __cplusplus
-}
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -128,7 +109,20 @@ VEC_RNP_INIT(type, suffix)                                                     \
 {                                                                              \
     /* calloc because able to separately specify num and size. */              \
     /* i.e. calloc will have to worry about possible overflow. */              \
-    vec->buf       = vec_calloc(capacity, sizeof(type));                       \
+    if (capacity > 0) {                                                        \
+        vec->buf = calloc(capacity, sizeof(type));                             \
+                                                                               \
+        if (vec->buf == NULL) {                                                \
+            fprintf(stderr, "%s: Failed to calloc %d of size %zu\n",           \
+                __func__, capacity, sizeof(type));                             \
+                                                                               \
+            exit(1);                                                           \
+        }                                                                      \
+    }                                                                          \
+    else {                                                                     \
+        vec->buf = NULL;                                                       \
+    }                                                                          \
+                                                                               \
     vec->length    = 0;                                                        \
     vec->capacity  = capacity;                                                 \
     vec->grow_mode = grow_mode;                                                \
@@ -380,7 +374,19 @@ VEC_RNP_REALLOCATE_BUF(type, suffix)                                           \
         exit(1);                                                               \
     }                                                                          \
                                                                                \
-    vec->buf = vec_realloc(vec->buf, new_size);                                \
+    if (new_size > 0) {                                                        \
+        vec->buf = realloc(vec->buf, new_size);                                \
+                                                                               \
+        if (vec->buf == NULL) {                                                \
+            fprintf(stderr, "%s: Failed to realloc to %zu bytes\n",            \
+                __func__, new_size);                                           \
+                                                                               \
+            exit(1);                                                           \
+        }                                                                      \
+    }                                                                          \
+    else {                                                                     \
+        vec->buf = NULL;                                                       \
+    }                                                                          \
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -455,36 +461,6 @@ VEC_RNP_REALLOCATE_BUF(type, suffix)                                           \
 #endif // VEC_H
 
 ////////////////////////////////////////////////////////////////////////////////
-// Utility function definitions
-////////////////////////////////////////////////////////////////////////////////
-
-#ifdef VEC_IMPLEMENTATION
-
-void *vec_calloc(size_t num, size_t size) {
-    void *const ptr = calloc(num, size);
-
-    if (num != 0 && size != 0 && ptr == NULL) {
-        fprintf(stderr, "%s: Failed to calloc %zu of size %zu\n",
-            __func__, num, size);
-        exit(1);
-    }
-
-    return ptr;
-}
-
-void *vec_realloc(void *ptr, size_t new_size) {
-    ptr = realloc(ptr, new_size);
-
-    if (new_size != 0 && ptr == NULL) {
-        fprintf(stderr, "%s: Failed to realloc to %zu bytes\n",
-            __func__, new_size);
-        exit(1);
-    }
-
-    return ptr;
-}
-
-#endif // VEC_IMPLEMENTATION
 
 /*
 BSD 2-Clause License
