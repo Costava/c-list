@@ -35,14 +35,10 @@ There are two ways to generate vec code for a given type:
 #ifndef VEC_H
 #define VEC_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#if defined(__linux__)
-// For `size_t`
-#include <stddef.h>
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -55,7 +51,7 @@ There are two ways to generate vec code for a given type:
 
 // Max permitted value of capacity member of struct.
 // Leave 1 space so that a normal for loop can iterate the buf.
-#define VEC_MAX_CAPACITY (UINT32_MAX - 1)
+#define VEC_MAX_CAPACITY (SIZE_MAX - 1)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Macro that generates the struct and its typedef
@@ -65,18 +61,18 @@ There are two ways to generate vec code for a given type:
 typedef struct vec##suffix {                                                   \
     /* These members are expected to be touched in order to                    \
          iterate over all items in vec */                                      \
-    type    *buf;                                                              \
-    uint32_t length; /* Number of elements in buf */                           \
+    type *buf;                                                                 \
+    size_t length; /* Number of elements in buf */                             \
                                                                                \
     /* Do not touch the below members outside of vec functions */              \
                                                                                \
     /* The number of spots allocated for the buf */                            \
-    uint32_t capacity;                                                         \
+    size_t capacity;                                                           \
     /* The way that the buffer size should grow when space is needed */        \
     /* Use the VEC_GROW_MODE_... constants to specify a value */               \
-    uint8_t  grow_mode;                                                        \
+    uint8_t grow_mode;                                                         \
     /* Usage depends on the grow_mode value */                                 \
-    uint32_t grow_val;                                                         \
+    size_t grow_val;                                                           \
 } vec##suffix;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -101,8 +97,8 @@ VEC_RNP_DEINIT(type, suffix)                                                   \
 
 // Do not use a vec struct before calling _init on it.
 #define VEC_RNP_INIT(type, suffix)                                             \
-    void vec##suffix##_init(vec##suffix *const vec, const uint32_t capacity,   \
-        const uint8_t grow_mode, const uint32_t grow_val)
+    void vec##suffix##_init(vec##suffix *const vec, const size_t capacity,     \
+        const uint8_t grow_mode, const size_t grow_val)
 
 #define VEC_DEFINE_INIT(type, suffix)                                          \
 VEC_RNP_INIT(type, suffix)                                                     \
@@ -113,7 +109,7 @@ VEC_RNP_INIT(type, suffix)                                                     \
         vec->buf = calloc(capacity, sizeof(type));                             \
                                                                                \
         if (vec->buf == NULL) {                                                \
-            fprintf(stderr, "%s: Failed to calloc %d of size %zu\n",           \
+            fprintf(stderr, "%s: Failed to calloc %zu of size %zu\n",          \
                 __func__, capacity, sizeof(type));                             \
                                                                                \
             exit(1);                                                           \
@@ -147,14 +143,14 @@ VEC_RNP_INIT(type, suffix)                                                     \
 // If vec already has VEC_MAX_CAPACITY members, prints to stderr and exits.
 #define VEC_RNP_INSERT_AT_SHIFT(type, suffix)                                  \
     void vec##suffix##_insert_at_shift(                                        \
-        vec##suffix *const vec, const type val, const uint32_t index)
+        vec##suffix *const vec, const type val, const size_t index)
 
 #define VEC_DEFINE_INSERT_AT_SHIFT(type, suffix)                               \
 VEC_RNP_INSERT_AT_SHIFT(type,suffix)                                           \
 {                                                                              \
     if (index > vec->length) {                                                 \
-        fprintf(stderr, "%s: Cannot insert into vec of length %d "             \
-            "at index %d\n", __func__, vec->length, index);                    \
+        fprintf(stderr, "%s: Cannot insert into vec of length %zu "            \
+            "at index %zu\n", __func__, vec->length, index);                   \
                                                                                \
         exit(1);                                                               \
     }                                                                          \
@@ -166,7 +162,7 @@ VEC_RNP_INSERT_AT_SHIFT(type,suffix)                                           \
     else {                                                                     \
         vec##suffix##_ensure_space(vec);                                       \
         /* Stop at 1 above index because index may be 0 */                     \
-        for (uint32_t i = vec->length; i > index + 1; i -= 1) {                \
+        for (size_t i = vec->length; i > index + 1; i -= 1) {                  \
             vec->buf[i] = vec->buf[i - 1];                                     \
         }                                                                      \
         vec->buf[index + 1] = vec->buf[index];                                 \
@@ -181,14 +177,14 @@ VEC_RNP_INSERT_AT_SHIFT(type,suffix)                                           \
 // If vec already has VEC_MAX_CAPACITY members, prints to stderr and exits.
 #define VEC_RNP_INSERT_AT_SWAP(type, suffix)                                   \
     void vec##suffix##_insert_at_swap(                                         \
-        vec##suffix *const vec, const type val, const uint32_t index)
+        vec##suffix *const vec, const type val, const size_t index)
 
 #define VEC_DEFINE_INSERT_AT_SWAP(type, suffix)                                \
 VEC_RNP_INSERT_AT_SWAP(type,suffix)                                            \
 {                                                                              \
     if (index > vec->length) {                                                 \
-        fprintf(stderr, "%s: Cannot insert into vec of length %d "             \
-            "at index %d\n", __func__, vec->length, index);                    \
+        fprintf(stderr, "%s: Cannot insert into vec of length %zu "            \
+            "at index %zu\n", __func__, vec->length, index);                   \
                                                                                \
         exit(1);                                                               \
     }                                                                          \
@@ -240,13 +236,13 @@ VEC_RNP_PUSH_BACK(type, suffix)                                                \
 // If error, print to stderr and exit(1)
 #define VEC_RNP_REMOVE_AT_SHIFT(type, suffix)                                  \
     type vec##suffix##_remove_at_shift(                                        \
-        vec##suffix *const vec, const uint32_t index)
+        vec##suffix *const vec, const size_t index)
 
 #define VEC_DEFINE_REMOVE_AT_SHIFT(type, suffix)                               \
 VEC_RNP_REMOVE_AT_SHIFT(type, suffix)                                          \
 {                                                                              \
     if (index >= vec->length) {                                                \
-        fprintf(stderr, "%s: Cannot remove at index %d from length %d vec\n",  \
+        fprintf(stderr, "%s: Cannot remove at index %zu from length %zu vec\n",\
             __func__, index, vec->length);                                     \
                                                                                \
         exit(1);                                                               \
@@ -254,7 +250,7 @@ VEC_RNP_REMOVE_AT_SHIFT(type, suffix)                                          \
                                                                                \
     type result = vec->buf[index];                                             \
     vec->length -= 1;                                                          \
-    for (uint32_t i = index; i < vec->length; i += 1) {                        \
+    for (size_t i = index; i < vec->length; i += 1) {                          \
         vec->buf[i] = vec->buf[i + 1];                                         \
     }                                                                          \
     return result;                                                             \
@@ -265,13 +261,13 @@ VEC_RNP_REMOVE_AT_SHIFT(type, suffix)                                          \
 // If error, print to stderr and exit(1)
 #define VEC_RNP_REMOVE_AT_SWAP(type, suffix)                                   \
     type vec##suffix##_remove_at_swap(                                         \
-        vec##suffix *const vec, const uint32_t index)
+        vec##suffix *const vec, const size_t index)
 
 #define VEC_DEFINE_REMOVE_AT_SWAP(type, suffix)                                \
 VEC_RNP_REMOVE_AT_SWAP(type, suffix)                                           \
 {                                                                              \
     if (index >= vec->length) {                                                \
-        fprintf(stderr, "%s: Cannot remove at index %d from length %d vec\n",  \
+        fprintf(stderr, "%s: Cannot remove at index %zu from length %zu vec\n",\
             __func__, index, vec->length);                                     \
                                                                                \
         exit(1);                                                               \
@@ -307,7 +303,7 @@ VEC_RNP_SHRINK_TO_FIT(type, suffix)                                            \
 #define VEC_DEFINE_ENSURE_SPACE(type, suffix)                                  \
 VEC_RNP_ENSURE_SPACE(type, suffix)                                             \
 {                                                                              \
-    if (vec->length >= vec->capacity)                                          \
+    if (vec->length == vec->capacity)                                          \
     {                                                                          \
         if (vec->capacity == VEC_MAX_CAPACITY) {                               \
             fprintf(stderr, "%s: Cannot add to full, max-sized vec.\n",        \
@@ -315,11 +311,18 @@ VEC_RNP_ENSURE_SPACE(type, suffix)                                             \
                                                                                \
             exit(1);                                                           \
         }                                                                      \
+        else if (vec->capacity > VEC_MAX_CAPACITY) {                           \
+            fprintf(stderr, "%s: vec is in invalid state. capacity: %zu "      \
+                "VEC_MAX_CAPACITY: %zu\n", __func__,                           \
+                vec->capacity, VEC_MAX_CAPACITY);                              \
+                                                                               \
+            exit(1);                                                           \
+        }                                                                      \
                                                                                \
         switch (vec->grow_mode) {                                              \
             case VEC_GROW_MODE_MULTIPLY:                                       \
             {                                                                  \
-                uint32_t new_capacity = vec->capacity * vec->grow_val;         \
+                size_t new_capacity = vec->capacity * vec->grow_val;           \
                 if ((new_capacity / vec->capacity) != vec->grow_val)           \
                 {                                                              \
                     /* Multiplying would overflow capacity so we have to */    \
@@ -352,6 +355,12 @@ VEC_RNP_ENSURE_SPACE(type, suffix)                                             \
             } break;                                                           \
         }                                                                      \
     }                                                                          \
+    else if (vec->length > vec->capacity) {                                    \
+        fprintf(stderr, "%s: vec is in invalid state. length: %zu "            \
+            "capacity: %zu\n", __func__, vec->length, vec->capacity);          \
+                                                                               \
+        exit(1);                                                               \
+    }                                                                          \
 }
 
 // Reallocate the buf for vec based on current capacity value.
@@ -368,7 +377,7 @@ VEC_RNP_REALLOCATE_BUF(type, suffix)                                           \
     if ((new_size / sizeof(type)) != vec->capacity)                            \
     {                                                                          \
         fprintf(stderr, "%s: Number of bytes to allocate overflows size_t. "   \
-            "[capacity: %d] [sizeof(type): %lu]\n", __func__, vec->capacity,   \
+            "[capacity: %zu] [sizeof(type): %zu]\n", __func__, vec->capacity,  \
             sizeof(type));                                                     \
                                                                                \
         exit(1);                                                               \
