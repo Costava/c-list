@@ -385,6 +385,7 @@ VEC_RNP_REALLOCATE_BUF(type, suffix)                                           \
         }                                                                      \
     }                                                                          \
     else {                                                                     \
+        free(vec->buf);                                                        \
         vec->buf = NULL;                                                       \
     }                                                                          \
 }
