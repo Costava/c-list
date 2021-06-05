@@ -36,8 +36,8 @@ Alternatively, these two macros can be called separately
 as seen in `test/car.h` and `test/car.c` respectively.  
 All three macros take the same two arguments: `type` and `suffix`.
 
-See `VEC_FOR_ALL_FUNCS` in `vec.h` for a list of all functions.
-Descriptions are above the definitions in `vec.h`.
+See `VEC_GENERATE_HEADER_CODE` in `vec.h`
+for a list of functions and their descriptions.
 
 Feel free to open an issue to ask a question.
 
