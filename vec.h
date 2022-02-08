@@ -49,10 +49,6 @@ There are two ways to generate vec code for a given type:
 // Add grow_val number of spots to the buffer
 #define VEC_GROW_MODE_ADD 2
 
-// Max permitted value of capacity member of struct.
-// Leave 1 space so that a normal for loop can iterate the buf.
-#define VEC_MAX_CAPACITY (SIZE_MAX - 1)
-
 ////////////////////////////////////////////////////////////////////////////////
 
 // Generates header code for the given type.
@@ -90,7 +86,7 @@ void vec##suffix##_init(vec##suffix *const vec, const size_t capacity,         \
 /* Insert val into vec at given index.                                         \
  * Shift values further into buf to make space if necessary.                   \
  * Print to stderr and exit(1) if error.                                       \
- * If vec already has VEC_MAX_CAPACITY members, prints to stderr and exits.    \
+ * If vec already has SIZE_MAX members, prints to stderr and exits.            \
  */                                                                            \
 void vec##suffix##_insert_at_shift(                                            \
     vec##suffix *const vec, const type val, const size_t index);               \
@@ -98,7 +94,7 @@ void vec##suffix##_insert_at_shift(                                            \
 /* Insert val into vec at given index.                                         \
  * Swap value at index to end of buf if necessary.                             \
  * Print to stderr and exit(1) if error.                                       \
- * If vec already has VEC_MAX_CAPACITY members, prints to stderr and exits.    \
+ * If vec already has SIZE_MAX members, prints to stderr and exits.            \
  */                                                                            \
 void vec##suffix##_insert_at_swap(                                             \
     vec##suffix *const vec, const type val, const size_t index);               \
@@ -109,7 +105,7 @@ void vec##suffix##_insert_at_swap(                                             \
 type vec##suffix##_pop_back(vec##suffix *const vec);                           \
                                                                                \
 /* Append val to end of vec.                                                   \
- * If vec already has VEC_MAX_CAPACITY members, prints to stderr and exits.    \
+ * If vec already has SIZE_MAX members, prints to stderr and exits.            \
  */                                                                            \
 void vec##suffix##_push_back(vec##suffix *const vec, type val);                \
                                                                                \
@@ -177,16 +173,9 @@ static void vec##suffix##_ensure_space(vec##suffix *const vec)                 \
 {                                                                              \
     if (vec->length == vec->capacity)                                          \
     {                                                                          \
-        if (vec->capacity == VEC_MAX_CAPACITY) {                               \
+        if (vec->capacity == SIZE_MAX) {                                       \
             fprintf(stderr, "%s: Cannot add to full, max-sized vec.\n",        \
                 __func__);                                                     \
-                                                                               \
-            exit(1);                                                           \
-        }                                                                      \
-        else if (vec->capacity > VEC_MAX_CAPACITY) {                           \
-            fprintf(stderr, "%s: vec is in invalid state. capacity: %zu "      \
-                "VEC_MAX_CAPACITY: %zu\n", __func__,                           \
-                vec->capacity, VEC_MAX_CAPACITY);                              \
                                                                                \
             exit(1);                                                           \
         }                                                                      \
@@ -200,7 +189,7 @@ static void vec##suffix##_ensure_space(vec##suffix *const vec)                 \
                     /* Multiplying would overflow capacity so we have to       \
                      * settle for the maximum value.                           \
                      */                                                        \
-                    new_capacity = VEC_MAX_CAPACITY;                           \
+                    new_capacity = SIZE_MAX;                                   \
                 }                                                              \
                                                                                \
                 vec->capacity = new_capacity;                                  \
@@ -208,13 +197,13 @@ static void vec##suffix##_ensure_space(vec##suffix *const vec)                 \
             } break;                                                           \
             case VEC_GROW_MODE_ADD:                                            \
             {                                                                  \
-                if (vec->capacity <= VEC_MAX_CAPACITY - vec->grow_val)         \
+                if (vec->capacity <= SIZE_MAX - vec->grow_val)                 \
                 {                                                              \
                     vec->capacity += vec->grow_val;                            \
                 }                                                              \
                 else                                                           \
                 {                                                              \
-                    vec->capacity = VEC_MAX_CAPACITY;                          \
+                    vec->capacity = SIZE_MAX;                                  \
                 }                                                              \
                                                                                \
                 vec##suffix##_reallocate_buf(vec);                             \
