@@ -57,21 +57,23 @@ There are two ways to generate vec code for a given type:
 // e.g. vecunsignedchar_push_back if suffix is unsignedchar
 #define VEC_GENERATE_HEADER_CODE(type, suffix)                                 \
 typedef struct vec##suffix {                                                   \
-    /* These members are expected to be touched in order to                    \
-     * iterate over all items in vec                                           \
-     */                                                                        \
+    /* Non-vec functions should NOT touch fields other than buf and length */  \
+                                                                               \
     type *buf;                                                                 \
-    size_t length; /* Number of elements in buf */                             \
                                                                                \
-    /* Do not touch the below members outside of vec functions */              \
+    /* Number of elements in buf */                                            \
+    size_t length;                                                             \
                                                                                \
-    /* The number of spots allocated for the buf */                            \
+    /* Number of spots allocated for the buf */                                \
     size_t capacity;                                                           \
-    /* The way that the buffer size should grow when space is needed */        \
-    /* Use the VEC_GROW_MODE_... constants to specify a value */               \
-    uint8_t grow_mode;                                                         \
+                                                                               \
     /* Usage depends on the grow_mode value */                                 \
     size_t grow_val;                                                           \
+                                                                               \
+    /* The way that the buffer size should grow when space is needed           \
+     * Use the VEC_GROW_MODE_... constants to specify a value                  \
+     */                                                                        \
+    uint8_t grow_mode;                                                         \
 } vec##suffix;                                                                 \
                                                                                \
 /* Clean up and free any internals of vec.                                     \
