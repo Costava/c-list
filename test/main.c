@@ -4,8 +4,8 @@
 #include "car.h"
 #include "vec.h"
 
-VEC_GENERATE_FOR_TYPE(int, int)
-VEC_GENERATE_FOR_TYPE(unsigned char, uchar)
+VEC_GENERATE_FOR_TYPE(int, int);
+VEC_GENERATE_FOR_TYPE(unsigned char, uchar);
 
 int main(void) {
     vecint widths;

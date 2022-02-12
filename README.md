@@ -14,7 +14,7 @@ Dependencies:
 
 // Generate code for the type `int32_t`
 // "i32" is suffixed to "vec" in the function names
-VEC_GENERATE_FOR_TYPE(int32_t, i32)
+VEC_GENERATE_FOR_TYPE(int32_t, i32);
 
 int main(void) {
     veci32 depths;

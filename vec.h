@@ -385,8 +385,8 @@ void vec##suffix##_shrink_to_fit(vec##suffix *const vec)                       \
 // Convenience macro for use in a place like the file with the main function.
 // See above for explanation of suffix.
 #define VEC_GENERATE_FOR_TYPE(type, suffix)                                    \
-    VEC_GENERATE_HEADER_CODE(type, suffix)                                     \
-    VEC_GENERATE_IMPLEMENTATION_CODE(type, suffix)
+    VEC_GENERATE_HEADER_CODE(type, suffix);                                    \
+    VEC_GENERATE_IMPLEMENTATION_CODE(type, suffix);
 
 ////////////////////////////////////////////////////////////////////////////////
 

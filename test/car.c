@@ -1,3 +1,3 @@
 #include "car.h"
 
-VEC_GENERATE_IMPLEMENTATION_CODE(car, car)
+VEC_GENERATE_IMPLEMENTATION_CODE(car, car);

@@ -13,7 +13,7 @@ typedef struct car {
 } car;
 
 // Would work the same to pass the type as 'struct car'
-VEC_GENERATE_HEADER_CODE(car, car)
+VEC_GENERATE_HEADER_CODE(car, car);
 
 #ifdef __cplusplus
 }
