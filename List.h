@@ -1,39 +1,37 @@
 /*
-File: vec.h
+File: List.h
 Author: Costava
 License: BSD 2-Clause License (see end of file)
 
-A vec is a struct to manage the state of a dynamic array.
+A List struct is used to manage the state of a dynamic array.
 The array buffer is heap-allocated and self-resizing (grows when necessary).
-For a given vec, all elements have the same type.
+For a given list, all elements have the same type.
 Buffer size can grow linearly or exponentially (set when initializing struct).
 All functions will print to stderr and exit if a memory allocation fails.
 
-Always call _init on a vec before using it.
-Call _deinit to clean up and free the internals of a vec.
+Always call _Init on a list before using it.
+Call _Deinit to clean up and free the internals of a list.
 
-If you want to use vec with a certain type,
+If you want to use list with a certain type,
   you will need to generate the code.
-There are two ways to generate vec code for a given type:
-1. Use macro VEC_GENERATE_HEADER_CODE in the type's header file.
-   Use macro VEC_GENERATE_IMPLEMENTATION_CODE in the type's .c file.
-   Explanation of macro parameters:
-   - type e.g. char, struct foo, unsigned char
-   - suffix is what will follow vec in the function names
-       e.g. vecchar_push_back
-            when char is given as the suffix in the macro call.
-       e.g. vecstructfoo_push_back
-       e.g. vecfoo_push_back
-       e.g. vecunsignedchar_push_back
-       e.g. vecuchar_push_back
+There are two ways to generate list code for a given type:
 
-2. Use macro VEC_GENERATE_FOR_TYPE in the main file
+1. Use macro LIST_GENERATE_FOR_TYPE in the main file of your program
      or an implementation file (when forward declarations are not needed).
-   For explanation of macro parameters, see 1.
+   Explanation of macro parameters:
+   1. type of element for the list e.g. char, struct foo, unsigned char
+   2. suffix is what will follow list in the function names
+       e.g. ListChar_PushBack
+            when Char is given as the suffix in the macro call.
+
+2. Use macro LIST_GENERATE_HEADER_CODE in the type's header file.
+   Use macro LIST_GENERATE_IMPLEMENTATION_CODE in the type's .c file.
+   Both macros have the same parameters as LIST_GENERATE_FOR_TYPE
+
 */
 
-#ifndef VEC_H
-#define VEC_H
+#ifndef LIST_H
+#define LIST_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -45,19 +43,19 @@ There are two ways to generate vec code for a given type:
 ////////////////////////////////////////////////////////////////////////////////
 
 // Multiply the size of the buffer by the grow_val
-#define VEC_GROW_MODE_MULTIPLY 1
+#define LIST_GROW_MODE_MULTIPLY 1
 // Add grow_val number of spots to the buffer
-#define VEC_GROW_MODE_ADD 2
+#define LIST_GROW_MODE_ADD 2
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // Generates header code for the given type.
 // suffix is used in the function names.
-// e.g. vecint_pop_back if suffix is int
-// e.g. vecunsignedchar_push_back if suffix is unsignedchar
-#define VEC_GENERATE_HEADER_CODE(type, suffix)                                 \
-typedef struct vec##suffix {                                                   \
-    /* Non-vec functions should NOT touch fields other than buf and length */  \
+// e.g. ListInt_PopBack if suffix is Int
+#define LIST_GENERATE_HEADER_CODE(type, suffix)                                \
+typedef struct List##suffix {                                                  \
+    /* Non-List/non-internal functions                                         \
+       should NOT touch fields other than buf and length */                    \
                                                                                \
     type *buf;                                                                 \
                                                                                \
@@ -71,90 +69,90 @@ typedef struct vec##suffix {                                                   \
     size_t grow_val;                                                           \
                                                                                \
     /* The way that the buffer size should grow when space is needed           \
-     * Use the VEC_GROW_MODE_... constants to specify a value                  \
+     * Use the LIST_GROW_MODE_... constants to specify a value                 \
      */                                                                        \
     uint8_t grow_mode;                                                         \
-} vec##suffix;                                                                 \
+} List##suffix;                                                                \
                                                                                \
-/* Clean up and free any internals of vec.                                     \
+/* Clean up and free any internals of given list.                              \
  */                                                                            \
-void vec##suffix##_deinit(vec##suffix *const vec);                             \
+void List##suffix##_Deinit(List##suffix *const list);                          \
                                                                                \
-/* Do not use a vec struct before calling _init on it.                         \
+/* Do not use a List struct before calling _Init on it.                        \
  */                                                                            \
-void vec##suffix##_init(vec##suffix *const vec, const size_t capacity,         \
+void List##suffix##_Init(List##suffix *const list, const size_t capacity,      \
     const uint8_t grow_mode, const size_t grow_val);                           \
                                                                                \
-/* Insert val into vec at given index.                                         \
+/* Insert val into given list at given index.                                  \
  * Shift values further into buf to make space if necessary.                   \
  * Print to stderr and exit(1) if error.                                       \
- * If vec already has SIZE_MAX members, prints to stderr and exits.            \
+ * If list already has SIZE_MAX members, prints to stderr and exits.           \
  */                                                                            \
-void vec##suffix##_insert_at_shift(                                            \
-    vec##suffix *const vec, const type val, const size_t index);               \
+void List##suffix##_InsertAtShift(                                             \
+    List##suffix *const list, const type val, const size_t index);             \
                                                                                \
-/* Insert val into vec at given index.                                         \
+/* Insert val into given list at given index.                                  \
  * Swap value at index to end of buf if necessary.                             \
  * Print to stderr and exit(1) if error.                                       \
- * If vec already has SIZE_MAX members, prints to stderr and exits.            \
+ * If list already has SIZE_MAX members, prints to stderr and exits.           \
  */                                                                            \
-void vec##suffix##_insert_at_swap(                                             \
-    vec##suffix *const vec, const type val, const size_t index);               \
+void List##suffix##_InsertAtSwap(                                              \
+    List##suffix *const list, const type val, const size_t index);             \
                                                                                \
-/* Remove and return the value at the end of the vec.                          \
- * Print to stderr and exit if vec is empty.                                   \
+/* Remove and return the value at the end of the given list.                   \
+ * Print to stderr and exit if list is empty.                                  \
  */                                                                            \
-type vec##suffix##_pop_back(vec##suffix *const vec);                           \
+type List##suffix##_PopBack(List##suffix *const list);                         \
                                                                                \
-/* Append val to end of vec.                                                   \
- * If vec already has SIZE_MAX members, prints to stderr and exits.            \
+/* Append val to end of given list.                                            \
+ * If list already has SIZE_MAX members, prints to stderr and exits.           \
  */                                                                            \
-void vec##suffix##_push_back(vec##suffix *const vec, type val);                \
+void List##suffix##_PushBack(List##suffix *const list, type val);              \
                                                                                \
 /* Remove and return the value at the given index.                             \
  * Shift elements over to fill hole.                                           \
  * If error, print to stderr and exit(1)                                       \
  */                                                                            \
-type vec##suffix##_remove_at_shift(                                            \
-    vec##suffix *const vec, const size_t index);                               \
+type List##suffix##_RemoveAtShift(                                             \
+    List##suffix *const list, const size_t index);                             \
                                                                                \
 /* Remove and return the value at the given index.                             \
  * Move the last element in buf into the space created by the removal.         \
  * If error, print to stderr and exit(1)                                       \
  */                                                                            \
-type vec##suffix##_remove_at_swap(                                             \
-    vec##suffix *const vec, const size_t index);                               \
+type List##suffix##_RemoveAtSwap(                                              \
+    List##suffix *const list, const size_t index);                             \
                                                                                \
 /* Shrink buffer to the size of its current contents.                          \
  */                                                                            \
-void vec##suffix##_shrink_to_fit(vec##suffix *const vec);
+void List##suffix##_ShrinkToFit(List##suffix *const list);
 
 
 // Generates implementation code for the given type.
 // See above for explanation of suffix.
-#define VEC_GENERATE_IMPLEMENTATION_CODE(type, suffix)                         \
-/* Reallocate the buf for vec based on current capacity value.                 \
+#define LIST_GENERATE_IMPLEMENTATION_CODE(type, suffix)                        \
+/* Reallocate the buf for list based on current capacity value.                \
  * Print to stderr and exit if the bytes to allocate overflows size_t.         \
- * You should never need to call this (other vec functions will).              \
+ * You should never need to call this (other list functions will).             \
  */                                                                            \
-static void vec##suffix##_reallocate_buf(vec##suffix *const vec)               \
+static void List##suffix##_ReallocateBuf(List##suffix *const list)             \
 {                                                                              \
-    const size_t new_size = sizeof(type) * vec->capacity;                      \
+    const size_t new_size = sizeof(type) * list->capacity;                     \
                                                                                \
-    if ((new_size / sizeof(type)) != vec->capacity)                            \
+    if ((new_size / sizeof(type)) != list->capacity)                           \
     {                                                                          \
         fprintf(stderr,                                                        \
             "%s: Number of bytes to allocate overflows size_t. "               \
             "[capacity: %zu] [sizeof(type): %zu]\n", __func__,                 \
-            vec->capacity, sizeof(type));                                      \
+            list->capacity, sizeof(type));                                     \
                                                                                \
         exit(1);                                                               \
     }                                                                          \
                                                                                \
     if (new_size > 0) {                                                        \
-        vec->buf = realloc(vec->buf, new_size);                                \
+        list->buf = realloc(list->buf, new_size);                              \
                                                                                \
-        if (vec->buf == NULL) {                                                \
+        if (list->buf == NULL) {                                               \
             fprintf(stderr, "%s: Failed to realloc to %zu bytes\n",            \
                 __func__, new_size);                                           \
                                                                                \
@@ -162,31 +160,31 @@ static void vec##suffix##_reallocate_buf(vec##suffix *const vec)               \
         }                                                                      \
     }                                                                          \
     else {                                                                     \
-        free(vec->buf);                                                        \
-        vec->buf = NULL;                                                       \
+        free(list->buf);                                                       \
+        list->buf = NULL;                                                      \
     }                                                                          \
 }                                                                              \
                                                                                \
-/* Ensure vec has space for at least 1 more value.                             \
+/* Ensure list has space for at least 1 more value.                            \
  * Else print to stderr and exit if fail to make space.                        \
- * You should never need to call this (other vec functions will).              \
+ * You should never need to call this (other list functions will).             \
  */                                                                            \
-static void vec##suffix##_ensure_space(vec##suffix *const vec)                 \
+static void List##suffix##_EnsureSpace(List##suffix *const list)               \
 {                                                                              \
-    if (vec->length == vec->capacity)                                          \
+    if (list->length == list->capacity)                                        \
     {                                                                          \
-        if (vec->capacity == SIZE_MAX) {                                       \
-            fprintf(stderr, "%s: Cannot add to full, max-sized vec.\n",        \
+        if (list->capacity == SIZE_MAX) {                                      \
+            fprintf(stderr, "%s: Cannot add to full, max-sized list.\n",       \
                 __func__);                                                     \
                                                                                \
             exit(1);                                                           \
         }                                                                      \
                                                                                \
-        switch (vec->grow_mode) {                                              \
-            case VEC_GROW_MODE_MULTIPLY:                                       \
+        switch (list->grow_mode) {                                             \
+            case LIST_GROW_MODE_MULTIPLY:                                      \
             {                                                                  \
-                size_t new_capacity = vec->capacity * vec->grow_val;           \
-                if ((new_capacity / vec->capacity) != vec->grow_val)           \
+                size_t new_capacity = list->capacity * list->grow_val;         \
+                if ((new_capacity / list->capacity) != list->grow_val)         \
                 {                                                              \
                     /* Multiplying would overflow capacity so we have to       \
                      * settle for the maximum value.                           \
@@ -194,56 +192,56 @@ static void vec##suffix##_ensure_space(vec##suffix *const vec)                 \
                     new_capacity = SIZE_MAX;                                   \
                 }                                                              \
                                                                                \
-                vec->capacity = new_capacity;                                  \
-                vec##suffix##_reallocate_buf(vec);                             \
+                list->capacity = new_capacity;                                 \
+                List##suffix##_ReallocateBuf(list);                            \
             } break;                                                           \
-            case VEC_GROW_MODE_ADD:                                            \
+            case LIST_GROW_MODE_ADD:                                           \
             {                                                                  \
-                if (vec->capacity <= SIZE_MAX - vec->grow_val)                 \
+                if (list->capacity <= SIZE_MAX - list->grow_val)               \
                 {                                                              \
-                    vec->capacity += vec->grow_val;                            \
+                    list->capacity += list->grow_val;                          \
                 }                                                              \
                 else                                                           \
                 {                                                              \
-                    vec->capacity = SIZE_MAX;                                  \
+                    list->capacity = SIZE_MAX;                                 \
                 }                                                              \
                                                                                \
-                vec##suffix##_reallocate_buf(vec);                             \
+                List##suffix##_ReallocateBuf(list);                            \
             } break;                                                           \
             default:                                                           \
             {                                                                  \
                 fprintf(stderr, "%s: Unknown grow_mode value: %d\n",           \
-                    __func__, vec->grow_mode);                                 \
+                    __func__, list->grow_mode);                                \
                                                                                \
                 exit(1);                                                       \
             } break;                                                           \
         }                                                                      \
     }                                                                          \
-    else if (vec->length > vec->capacity) {                                    \
-        fprintf(stderr, "%s: vec is in invalid state. length: %zu "            \
-            "capacity: %zu\n", __func__, vec->length, vec->capacity);          \
+    else if (list->length > list->capacity) {                                  \
+        fprintf(stderr, "%s: list is in invalid state. length: %zu "           \
+            "capacity: %zu\n", __func__, list->length, list->capacity);        \
                                                                                \
         exit(1);                                                               \
     }                                                                          \
 }                                                                              \
                                                                                \
-void vec##suffix##_deinit(vec##suffix *const vec)                              \
+void List##suffix##_Deinit(List##suffix *const list)                           \
 {                                                                              \
-    free(vec->buf);                                                            \
-    vec->buf    = NULL;                                                        \
-    vec->length    = 0;                                                        \
-    vec->capacity = 0;                                                         \
+    free(list->buf);                                                           \
+    list->buf    = NULL;                                                       \
+    list->length    = 0;                                                       \
+    list->capacity = 0;                                                        \
 }                                                                              \
                                                                                \
-void vec##suffix##_init(vec##suffix *const vec, const size_t capacity,         \
+void List##suffix##_Init(List##suffix *const list, const size_t capacity,      \
     const uint8_t grow_mode, const size_t grow_val)                            \
 {                                                                              \
     /* calloc because able to separately specify num and size. */              \
     /* i.e. calloc will have to worry about possible overflow. */              \
     if (capacity > 0) {                                                        \
-        vec->buf = calloc(capacity, sizeof(type));                             \
+        list->buf = calloc(capacity, sizeof(type));                            \
                                                                                \
-        if (vec->buf == NULL) {                                                \
+        if (list->buf == NULL) {                                               \
             fprintf(stderr, "%s: Failed to calloc %zu of size %zu\n",          \
                 __func__, capacity, sizeof(type));                             \
                                                                                \
@@ -251,152 +249,148 @@ void vec##suffix##_init(vec##suffix *const vec, const size_t capacity,         \
         }                                                                      \
     }                                                                          \
     else {                                                                     \
-        vec->buf = NULL;                                                       \
+        list->buf = NULL;                                                      \
     }                                                                          \
                                                                                \
-    vec->length    = 0;                                                        \
-    vec->capacity  = capacity;                                                 \
-    vec->grow_mode = grow_mode;                                                \
+    list->length    = 0;                                                       \
+    list->capacity  = capacity;                                                \
+    list->grow_mode = grow_mode;                                               \
                                                                                \
     if (grow_val == 0) {                                                       \
         fprintf(stderr, "%s: grow_val must be non-zero.\n", __func__);         \
         exit(1);                                                               \
     }                                                                          \
-    else if (grow_mode == VEC_GROW_MODE_MULTIPLY && grow_val == 1) {           \
+    else if (grow_mode == LIST_GROW_MODE_MULTIPLY && grow_val == 1) {          \
         fprintf(stderr, "%s: grow_val must be >=2 for "                        \
-            "VEC_GROW_MODE_MULTIPLY.\n", __func__);                            \
+            "LIST_GROW_MODE_MULTIPLY.\n", __func__);                           \
                                                                                \
         exit(1);                                                               \
     }                                                                          \
                                                                                \
-    vec->grow_val  = grow_val;                                                 \
+    list->grow_val  = grow_val;                                                \
 }                                                                              \
                                                                                \
-void vec##suffix##_insert_at_shift(                                            \
-    vec##suffix *const vec, const type val, const size_t index)                \
+void List##suffix##_InsertAtShift(                                             \
+    List##suffix *const list, const type val, const size_t index)              \
 {                                                                              \
-    if (index > vec->length) {                                                 \
-        fprintf(stderr, "%s: Cannot insert into vec of length %zu "            \
-            "at index %zu\n", __func__, vec->length, index);                   \
+    if (index > list->length) {                                                \
+        fprintf(stderr, "%s: Cannot insert into list of length %zu "           \
+            "at index %zu\n", __func__, list->length, index);                  \
                                                                                \
         exit(1);                                                               \
     }                                                                          \
-    else if (index == vec->length) {                                           \
-        vec##suffix##_ensure_space(vec);                                       \
-        vec->buf[index] = val;                                                 \
-        vec->length += 1;                                                      \
+    else if (index == list->length) {                                          \
+        List##suffix##_EnsureSpace(list);                                      \
+        list->buf[index] = val;                                                \
+        list->length += 1;                                                     \
     }                                                                          \
     else {                                                                     \
-        vec##suffix##_ensure_space(vec);                                       \
+        List##suffix##_EnsureSpace(list);                                      \
         /* Stop at 1 above index because index may be 0 */                     \
-        for (size_t i = vec->length; i > index + 1; i -= 1) {                  \
-            vec->buf[i] = vec->buf[i - 1];                                     \
+        for (size_t i = list->length; i > index + 1; i -= 1) {                 \
+            list->buf[i] = list->buf[i - 1];                                   \
         }                                                                      \
-        vec->buf[index + 1] = vec->buf[index];                                 \
-        vec->buf[index] = val;                                                 \
-        vec->length += 1;                                                      \
+        list->buf[index + 1] = list->buf[index];                               \
+        list->buf[index] = val;                                                \
+        list->length += 1;                                                     \
     }                                                                          \
 }                                                                              \
                                                                                \
-void vec##suffix##_insert_at_swap(                                             \
-    vec##suffix *const vec, const type val, const size_t index)                \
+void List##suffix##_InsertAtSwap(                                              \
+    List##suffix *const list, const type val, const size_t index)              \
 {                                                                              \
-    if (index > vec->length) {                                                 \
-        fprintf(stderr, "%s: Cannot insert into vec of length %zu "            \
-            "at index %zu\n", __func__, vec->length, index);                   \
+    if (index > list->length) {                                                \
+        fprintf(stderr, "%s: Cannot insert into list of length %zu "           \
+            "at index %zu\n", __func__, list->length, index);                  \
                                                                                \
         exit(1);                                                               \
     }                                                                          \
-    else if (index == vec->length) {                                           \
-        vec##suffix##_ensure_space(vec);                                       \
-        vec->buf[index] = val;                                                 \
-        vec->length += 1;                                                      \
+    else if (index == list->length) {                                          \
+        List##suffix##_EnsureSpace(list);                                      \
+        list->buf[index] = val;                                                \
+        list->length += 1;                                                     \
     }                                                                          \
     else {                                                                     \
-        vec##suffix##_ensure_space(vec);                                       \
-        vec->buf[vec->length] = vec->buf[index];                               \
-        vec->buf[index] = val;                                                 \
-        vec->length += 1;                                                      \
+        List##suffix##_EnsureSpace(list);                                      \
+        list->buf[list->length] = list->buf[index];                            \
+        list->buf[index] = val;                                                \
+        list->length += 1;                                                     \
     }                                                                          \
 }                                                                              \
                                                                                \
-type vec##suffix##_pop_back(vec##suffix *const vec)                            \
+type List##suffix##_PopBack(List##suffix *const list)                          \
 {                                                                              \
-    if (vec->length == 0) {                                                    \
-        fprintf(stderr, "%s: Cannot pop from empty vec.\n", __func__);         \
+    if (list->length == 0) {                                                   \
+        fprintf(stderr, "%s: Cannot pop from empty list.\n", __func__);        \
         exit(1);                                                               \
     }                                                                          \
                                                                                \
-    vec->length -= 1;                                                          \
-    return vec->buf[vec->length];                                              \
+    list->length -= 1;                                                         \
+    return list->buf[list->length];                                            \
 }                                                                              \
                                                                                \
-void vec##suffix##_push_back(vec##suffix *const vec, type val)                 \
+void List##suffix##_PushBack(List##suffix *const list, type val)               \
 {                                                                              \
-    vec##suffix##_ensure_space(vec);                                           \
-    vec->buf[vec->length] = val;                                               \
-    vec->length += 1;                                                          \
+    List##suffix##_EnsureSpace(list);                                          \
+    list->buf[list->length] = val;                                             \
+    list->length += 1;                                                         \
 }                                                                              \
                                                                                \
-type vec##suffix##_remove_at_shift(                                            \
-    vec##suffix *const vec, const size_t index)                                \
+type List##suffix##_RemoveAtShift(                                             \
+    List##suffix *const list, const size_t index)                              \
 {                                                                              \
-    if (index >= vec->length) {                                                \
+    if (index >= list->length) {                                               \
         fprintf(stderr,                                                        \
-            "%s: Cannot remove at index %zu from length %zu vec\n",            \
-            __func__, index, vec->length);                                     \
+            "%s: Cannot remove at index %zu from length %zu list\n",           \
+            __func__, index, list->length);                                    \
                                                                                \
         exit(1);                                                               \
     }                                                                          \
                                                                                \
-    type result = vec->buf[index];                                             \
-    vec->length -= 1;                                                          \
-    for (size_t i = index; i < vec->length; i += 1) {                          \
-        vec->buf[i] = vec->buf[i + 1];                                         \
+    type result = list->buf[index];                                            \
+    list->length -= 1;                                                         \
+    for (size_t i = index; i < list->length; i += 1) {                         \
+        list->buf[i] = list->buf[i + 1];                                       \
     }                                                                          \
                                                                                \
     return result;                                                             \
 }                                                                              \
                                                                                \
-type vec##suffix##_remove_at_swap(                                             \
-    vec##suffix *const vec, const size_t index)                                \
+type List##suffix##_RemoveAtSwap(                                              \
+    List##suffix *const list, const size_t index)                              \
 {                                                                              \
-    if (index >= vec->length) {                                                \
+    if (index >= list->length) {                                               \
         fprintf(stderr,                                                        \
-            "%s: Cannot remove at index %zu from length %zu vec\n",            \
-            __func__, index, vec->length);                                     \
+            "%s: Cannot remove at index %zu from length %zu list\n",           \
+            __func__, index, list->length);                                    \
                                                                                \
         exit(1);                                                               \
     }                                                                          \
                                                                                \
-    type result = vec->buf[index];                                             \
-    vec->buf[index] = vec->buf[vec->length - 1];                               \
-    vec->length -= 1;                                                          \
+    type result = list->buf[index];                                            \
+    list->buf[index] = list->buf[list->length - 1];                            \
+    list->length -= 1;                                                         \
     return result;                                                             \
 }                                                                              \
                                                                                \
-void vec##suffix##_shrink_to_fit(vec##suffix *const vec)                       \
+void List##suffix##_ShrinkToFit(List##suffix *const list)                      \
 {                                                                              \
-    vec->capacity = vec->length;                                               \
-    vec##suffix##_reallocate_buf(vec);                                         \
+    list->capacity = list->length;                                             \
+    List##suffix##_ReallocateBuf(list);                                        \
 }
 
 // Generates both header and implementation code for the given type.
 // Convenience macro for use in a place like the file with the main function.
 // See above for explanation of suffix.
-#define VEC_GENERATE_FOR_TYPE(type, suffix)                                    \
-    VEC_GENERATE_HEADER_CODE(type, suffix);                                    \
-    VEC_GENERATE_IMPLEMENTATION_CODE(type, suffix);
+#define LIST_GENERATE_FOR_TYPE(type, suffix)                                   \
+    LIST_GENERATE_HEADER_CODE(type, suffix);                                   \
+    LIST_GENERATE_IMPLEMENTATION_CODE(type, suffix);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#endif // VEC_H
+#endif // LIST_H
 
 ////////////////////////////////////////////////////////////////////////////////
-
-// Other possible functions:
-// reserve_at_shift
-// reserve_at_swap
 
 // Note:
 // Structs cannot be compared with ==
@@ -406,7 +400,7 @@ void vec##suffix##_shrink_to_fit(vec##suffix *const vec)                       \
 //
 // It would be possible to communicate some way that a certain struct
 //   should be compared for equality (or a special equality check for any
-//   certain type), but probably would not be worth the complexity -- just
+//   certain type), but probably would not be worth the complexity --
 //   accomplish your task by iterating across the buffer instead.
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -414,7 +408,7 @@ void vec##suffix##_shrink_to_fit(vec##suffix *const vec)                       \
 /*
 BSD 2-Clause License
 
-Copyright 2021 Costava
+Copyright 2021-2022 Costava
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:

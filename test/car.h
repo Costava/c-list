@@ -1,7 +1,7 @@
 #ifndef CAR_H
 #define CAR_H
 
-#include "vec.h"
+#include "List.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,7 +13,7 @@ typedef struct car {
 } car;
 
 // Would work the same to pass the type as 'struct car'
-VEC_GENERATE_HEADER_CODE(car, car);
+LIST_GENERATE_HEADER_CODE(car, car);
 
 #ifdef __cplusplus
 }
